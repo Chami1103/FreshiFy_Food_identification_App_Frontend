@@ -1,0 +1,69 @@
+name: 🚀 FreshiFy Mobile App CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build:
+    name: 🧱 Build Android APK (Expo)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🧪 TypeScript type check
+        run: npx tsc --noEmit
+
+      - name: 🚀 Expo prebuild (Android)
+        run: npx expo prebuild --platform android
+
+      - name: 🧱 Build Android release APK
+        run: npx expo run:android --variant release
+        env:
+          EXPO_NO_DOCTOR: true
+
+      - name: 📤 Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: freshify-android-apk
+          path: android/app/build/outputs/**/*.apk
+
+  release:
+    name: 📦 Create GitHub Release with APK
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: ⬇️ Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: freshify-android-apk
+          path: dist
+
+      - name: 🏷️ Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: "FreshiFy Build #${{ github.run_number }}"
+          body: "Automated release from CI/CD pipeline"
+          draft: false
+          prerelease: false
+          files: dist/**/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
