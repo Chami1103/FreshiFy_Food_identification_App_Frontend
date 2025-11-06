@@ -1,4 +1,3 @@
-//E:\FreshiFy_Mobile_App_Frontend\screens\RecipesScreen.tsx
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -7,12 +6,11 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { API } from "../config/config";
+import { API } from "../services/api"; // ✅ Fixed import path
 import Card from "../components/Card";
 import Loader from "../components/Loader";
 import Toast from "react-native-toast-message";
@@ -27,15 +25,26 @@ const RecipesScreen: React.FC = () => {
   const fetchRecipes = async (search?: string) => {
     try {
       setLoading(true);
-      const res = await fetch(API.PREDICT_RECIPES || `${API.MAIN_BASE_URL}/predict-recipes`, {
+      const res = await fetch(API.PREDICT_RECIPES, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ingredients: search || "carrot, milk, chicken" }),
+        body: JSON.stringify({
+          ingredients: search?.trim() || "carrot, milk, chicken",
+        }),
       });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
       const data = await res.json();
       setRecipes(data?.recipes ?? []);
     } catch (err) {
-      Toast.show({ type: "error", text1: "Failed to load recipes" });
+      console.error("fetchRecipes error:", err);
+      Toast.show({
+        type: "error",
+        text1: "Recipe Fetch Failed",
+        text2: "Please check your network or backend server.",
+      });
+      setRecipes([]);
     } finally {
       setLoading(false);
     }
@@ -50,11 +59,15 @@ const RecipesScreen: React.FC = () => {
       <Text style={styles.recipeTitle}>{item.title}</Text>
       <Text style={styles.section}>🧂 Ingredients:</Text>
       {item.ingredients.map((ing, idx) => (
-        <Text key={idx} style={styles.textItem}>• {ing}</Text>
+        <Text key={idx} style={styles.textItem}>
+          • {ing}
+        </Text>
       ))}
       <Text style={styles.section}>👨‍🍳 Instructions:</Text>
       {item.instructions.map((step, idx) => (
-        <Text key={idx} style={styles.textItem}>{idx + 1}. {step}</Text>
+        <Text key={idx} style={styles.textItem}>
+          {idx + 1}. {step}
+        </Text>
       ))}
       <Text style={styles.time}>⏱ {item.prepTime}</Text>
     </Card>
@@ -71,8 +84,13 @@ const RecipesScreen: React.FC = () => {
           value={query}
           onChangeText={setQuery}
           style={styles.input}
+          returnKeyType="search"
+          onSubmitEditing={() => fetchRecipes(query)}
         />
-        <TouchableOpacity style={styles.searchBtn} onPress={() => fetchRecipes(query)}>
+        <TouchableOpacity
+          style={styles.searchBtn}
+          onPress={() => fetchRecipes(query)}
+        >
           <Ionicons name="search" color="#fff" size={20} />
         </TouchableOpacity>
       </View>
@@ -93,6 +111,7 @@ const RecipesScreen: React.FC = () => {
               <Text style={styles.emptyText}>No recipes found</Text>
             </View>
           }
+          contentContainerStyle={{ paddingBottom: 24 }}
         />
       )}
     </KeyboardAvoidingView>
