@@ -1,4 +1,3 @@
-// screens/detection/CameraScanView.tsx
 import React, { useState } from "react";
 import {
   View,
@@ -7,7 +6,6 @@ import {
   Image,
   TouchableOpacity,
   ScrollView,
-  ActivityIndicator,
   Alert,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
@@ -25,10 +23,14 @@ const CameraScanView: React.FC<{ goBack: () => void }> = ({ goBack }) => {
   const [loading, setLoading] = useState(false);
 
   const pickImage = async (source: "camera" | "gallery") => {
-    const options = { mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 };
+    const options = {
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    };
     let result;
     if (source === "camera") result = await ImagePicker.launchCameraAsync(options);
     else result = await ImagePicker.launchImageLibraryAsync(options);
+
     if (!result.canceled && result.assets && result.assets.length > 0) {
       const newImage = {
         id: `${Date.now()}`,
@@ -44,27 +46,34 @@ const CameraScanView: React.FC<{ goBack: () => void }> = ({ goBack }) => {
       Alert.alert("No images", "Please select at least one image.");
       return;
     }
+
     setLoading(true);
     try {
       const files = images.map((i) => i.file);
       const results = await analyzeImages(files);
+
       const newPredictions: PredictionCardData[] = images.map((img, i) => {
         const result = results[i] || { foodName: "Unknown", status: "Spoiled" };
-        if (result.status === "Spoiled") {
+        const cleanStatus: "Fresh" | "Spoiled" =
+          result.status === "Fresh" ? "Fresh" : "Spoiled"; // ✅ strict type
+
+        if (cleanStatus === "Spoiled") {
           addNotification({
-            type: "alert",
+            type: "spoiled_alert",
             title: "Spoiled Item Detected",
             message: `${result.foodName} detected as spoiled.`,
           });
         }
+
         return {
           id: `${Date.now()}-${i}`,
           foodName: result.foodName,
-          status: result.status,
+          status: cleanStatus,
           imagePreview: img.preview,
           timestamp: new Date().toLocaleString(),
         };
       });
+
       setPredictions(newPredictions);
       setImages([]);
     } catch (e) {

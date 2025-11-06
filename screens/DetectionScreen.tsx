@@ -1,5 +1,11 @@
-// screens/DetectionScreen.tsx
-import React, { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  Suspense,
+} from "react";
 import {
   View,
   Text,
@@ -7,17 +13,15 @@ import {
   Animated,
   StyleSheet,
   LayoutRectangle,
-  NativeSyntheticEvent,
-  NativeTouchEvent,
   Dimensions,
 } from "react-native";
 import Loader from "../components/Loader";
 
-// Lazy-load the sub-views (improves initial bundle size)
+// Lazy-load sub-screens
 const DetectView = React.lazy(() => import("./detection/DetectView"));
 const AnalyticsScreen = React.lazy(() => import("./AnalyticsScreen"));
 const CostScreen = React.lazy(() => import("./CostScreen"));
-const VeoView = React.lazy(() => import("./detection/SelectionView")); // example mapped to SelectionView
+const VeoView = React.lazy(() => import("./detection/SelectionView"));
 
 type TabKey = "detect" | "analytics" | "cost" | "veo";
 
@@ -32,29 +36,24 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 
 const DetectionScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>("detect");
-
-  // store measured layout for each tab button
-  const [layouts, setLayouts] = useState<Record<TabKey, LayoutRectangle | null>>({
+  const [layouts, setLayouts] = useState<
+    Record<TabKey, LayoutRectangle | null>
+  >({
     detect: null,
     analytics: null,
     cost: null,
     veo: null,
   });
 
-  // Animated values for indicator position and width
   const indicatorX = useRef(new Animated.Value(0)).current;
   const indicatorWidth = useRef(new Animated.Value(0)).current;
-
-  // keep track if initial measurement done
   const measuredCount = useRef(0);
 
-  // onLayout handler: store measurement for each tab
   const onTabLayout = useCallback(
     (key: TabKey) => (ev: any) => {
       const layout: LayoutRectangle = ev.nativeEvent.layout;
       setLayouts((prev) => {
         const next = { ...prev, [key]: layout };
-        // track measured items
         measuredCount.current = Object.values(next).filter(Boolean).length;
         return next;
       });
@@ -62,11 +61,9 @@ const DetectionScreen: React.FC = () => {
     []
   );
 
-  // when active tab or layouts change, animate indicator
   useEffect(() => {
     const layout = layouts[activeTab];
     if (!layout) {
-      // If not measured yet, try to compute a fallback width/position based on index
       const idx = TAB_CONFIG.findIndex((t) => t.key === activeTab);
       const fallbackWidth = Math.round(SCREEN_WIDTH / TAB_CONFIG.length) - 24;
       const fallbackX = Math.round((SCREEN_WIDTH / TAB_CONFIG.length) * idx + 12);
@@ -103,7 +100,6 @@ const DetectionScreen: React.FC = () => {
     ]).start();
   }, [activeTab, layouts, indicatorX, indicatorWidth]);
 
-  // initial measure effect: when all tabs measured, set indicator to active tab
   useEffect(() => {
     if (measuredCount.current >= TAB_CONFIG.length) {
       const layout = layouts[activeTab];
@@ -112,12 +108,7 @@ const DetectionScreen: React.FC = () => {
         indicatorWidth.setValue(layout.width);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [layouts]);
-
-  const onPressTab = (key: TabKey) => {
-    setActiveTab(key);
-  };
 
   const renderContent = useCallback(() => {
     switch (activeTab) {
@@ -141,8 +132,9 @@ const DetectionScreen: React.FC = () => {
         );
       case "veo":
         return (
-          <Suspense fallback={<Loader text="Loading..." />}>
-            <VeoView />
+          <Suspense fallback={<Loader text="Loading Veo..." />}>
+            {/* ✅ FIX: Added required prop */}
+            <VeoView setMode={() => {}} />
           </Suspense>
         );
       default:
@@ -150,7 +142,6 @@ const DetectionScreen: React.FC = () => {
     }
   }, [activeTab]);
 
-  // computed styles for animated indicator
   const indicatorStyle = useMemo(
     () => ({
       left: indicatorX,
@@ -161,6 +152,7 @@ const DetectionScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      {/* Subheader Tabs */}
       <View style={styles.subHeaderContainer}>
         <View style={styles.tabRow}>
           {TAB_CONFIG.map((tab) => {
@@ -169,7 +161,7 @@ const DetectionScreen: React.FC = () => {
               <TouchableOpacity
                 key={tab.key}
                 onLayout={onTabLayout(tab.key)}
-                onPress={() => onPressTab(tab.key)}
+                onPress={() => setActiveTab(tab.key)}
                 activeOpacity={0.8}
                 style={[styles.tabButton, isActive && styles.tabButtonActive]}
               >
@@ -181,7 +173,7 @@ const DetectionScreen: React.FC = () => {
           })}
         </View>
 
-        {/* Animated sliding indicator */}
+        {/* Animated indicator */}
         <Animated.View style={[styles.indicator, indicatorStyle]} />
       </View>
 
@@ -217,7 +209,6 @@ const styles = StyleSheet.create({
     transform: [{ scale: 1 }],
   },
   tabButtonActive: {
-    // subtle elevation when active
     transform: [{ scale: 1.02 }],
   },
   tabLabel: {

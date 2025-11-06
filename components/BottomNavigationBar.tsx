@@ -1,7 +1,10 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import {
+  createBottomTabNavigator,
+  BottomTabNavigationOptions,
+} from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import Toast from "react-native-toast-message";
 
@@ -17,22 +20,21 @@ import { ThemeProvider } from "../contexts/ThemeContext";
 import { NotificationProvider } from "../contexts/NotificationContext";
 
 // Header
-import Header from "../components/Header";
+import Header from "./Header";
 
 const Tab = createBottomTabNavigator();
 
-const BottomNavigationBar = () => {
+const BottomNavigationBar: React.FC = () => {
   return (
     <ThemeProvider>
       <NotificationProvider>
         <View style={styles.container}>
-          {/* Global Header (always visible) */}
+          {/* Global Header */}
           <Header isHeaderVisible={true} />
 
-          {/* Navigation Container */}
           <NavigationContainer>
             <Tab.Navigator
-              screenOptions={({ route }) => ({
+              screenOptions={({ route }): BottomTabNavigationOptions => ({
                 headerShown: false,
                 tabBarActiveTintColor: "#2563eb",
                 tabBarInactiveTintColor: "#94a3b8",
@@ -42,8 +44,14 @@ const BottomNavigationBar = () => {
                   height: 60,
                   paddingBottom: 6,
                 },
-                tabBarIcon: ({ color, size }) => {
-                  let icon: keyof typeof Ionicons.glyphMap;
+                tabBarIcon: ({
+                  color,
+                  size,
+                }: {
+                  color: string;
+                  size: number;
+                }) => {
+                  let icon: keyof typeof Ionicons.glyphMap = "ellipse-outline";
 
                   switch (route.name) {
                     case "Home":
@@ -61,8 +69,6 @@ const BottomNavigationBar = () => {
                     case "Profile":
                       icon = "person-outline";
                       break;
-                    default:
-                      icon = "ellipse-outline";
                   }
 
                   return <Ionicons name={icon} size={size} color={color} />;
@@ -77,7 +83,6 @@ const BottomNavigationBar = () => {
             </Tab.Navigator>
           </NavigationContainer>
 
-          {/* Toast Notifications (global) */}
           <Toast />
         </View>
       </NotificationProvider>

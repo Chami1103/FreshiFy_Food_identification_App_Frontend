@@ -1,10 +1,9 @@
-// app/blog.tsx
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, Image, Pressable, FlatList } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator, Image, Pressable } from "react-native";
 import Animated from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import API, { API_CONFIG } from "../config/config";
+import { API } from "../services/api"; // ✅ Fixed import
 
 type Blog = {
   _id: string;
@@ -30,7 +29,7 @@ export default function BlogListScreen() {
       setLoading(true);
       setErr(null);
       try {
-        const res = await fetch(API.BLOGS, { signal: ctrl.signal });
+        const res = await fetch(API.BLOGS);
         if (!res.ok) throw new Error(`Server returned ${res.status}`);
         const data = await res.json();
         const list: Blog[] = Array.isArray(data) ? data : data?.items || [];
@@ -49,13 +48,11 @@ export default function BlogListScreen() {
 
   const resolveImage = (img?: string | null) => {
     if (!img) return null;
-    // If absolute URL, return it; otherwise prefix with MAIN base url
     try {
       const url = new URL(img);
       return url.toString();
     } catch {
-      // relative path
-      return `${API_CONFIG.MAIN_BASE_URL.replace(/\/+$/, "")}/${img.replace(/^\/+/, "")}`;
+      return `${API.MAIN_BASE_URL.replace(/\/+$/, "")}/${img.replace(/^\/+/, "")}`;
     }
   };
 
@@ -97,7 +94,9 @@ export default function BlogListScreen() {
   if (err) {
     return (
       <View style={[styles.center, { paddingTop: 80, padding: 16 }]}>
-        <Text style={{ color: "#ef4444", fontWeight: "600", textAlign: "center" }}>{err}</Text>
+        <Text style={{ color: "#ef4444", fontWeight: "600", textAlign: "center" }}>
+          {err}
+        </Text>
       </View>
     );
   }
@@ -110,7 +109,12 @@ export default function BlogListScreen() {
       contentContainerStyle={{ padding: 16, paddingTop: 0, paddingBottom: 24 }}
       ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
       ListHeaderComponent={
-        <LinearGradient colors={["#60A5FA", "#2563EB"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.header}>
+        <LinearGradient
+          colors={["#60A5FA", "#2563EB"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.header}
+        >
           <Text style={styles.headerText}>📰 Freshify Blog</Text>
         </LinearGradient>
       }

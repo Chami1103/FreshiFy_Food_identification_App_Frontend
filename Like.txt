@@ -374,3 +374,1239 @@ const styles = StyleSheet.create({
 
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+//E:\FreshiFy_Mobile_App_Frontend\components\BottomNavigationBar.tsx
+import React from "react";
+import { View, StyleSheet } from "react-native";
+import { NavigationContainer } from "@react-navigation/native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { Ionicons } from "@expo/vector-icons";
+import Toast from "react-native-toast-message";
+
+// Screens
+import HomeScreen from "../screens/HomeScreen";
+import DetectionScreen from "../screens/DetectionScreen";
+import RecipesScreen from "../screens/RecipesScreen";
+import BlogScreen from "../screens/BlogScreen";
+import ProfileScreen from "../screens/ProfileScreen";
+
+// Contexts
+import { ThemeProvider } from "../contexts/ThemeContext";
+import { NotificationProvider } from "../contexts/NotificationContext";
+
+// Header
+import Header from "../components/Header";
+
+const Tab = createBottomTabNavigator();
+
+const BottomNavigationBar = () => {
+  return (
+    <ThemeProvider>
+      <NotificationProvider>
+        <View style={styles.container}>
+          {/* Global Header (always visible) */}
+          <Header isHeaderVisible={true} />
+
+          {/* Navigation Container */}
+          <NavigationContainer>
+            <Tab.Navigator
+              screenOptions={({ route }) => ({
+                headerShown: false,
+                tabBarActiveTintColor: "#2563eb",
+                tabBarInactiveTintColor: "#94a3b8",
+                tabBarStyle: {
+                  backgroundColor: "#f8fafc",
+                  borderTopWidth: 0.3,
+                  height: 60,
+                  paddingBottom: 6,
+                },
+                tabBarIcon: ({ color, size }) => {
+                  let icon: keyof typeof Ionicons.glyphMap;
+
+                  switch (route.name) {
+                    case "Home":
+                      icon = "home-outline";
+                      break;
+                    case "Detect":
+                      icon = "scan-outline";
+                      break;
+                    case "Recipes":
+                      icon = "restaurant-outline";
+                      break;
+                    case "Blog":
+                      icon = "book-outline";
+                      break;
+                    case "Profile":
+                      icon = "person-outline";
+                      break;
+                    default:
+                      icon = "ellipse-outline";
+                  }
+
+                  return <Ionicons name={icon} size={size} color={color} />;
+                },
+              })}
+            >
+              <Tab.Screen name="Home" component={HomeScreen} />
+              <Tab.Screen name="Detect" component={DetectionScreen} />
+              <Tab.Screen name="Recipes" component={RecipesScreen} />
+              <Tab.Screen name="Blog" component={BlogScreen} />
+              <Tab.Screen name="Profile" component={ProfileScreen} />
+            </Tab.Navigator>
+          </NavigationContainer>
+
+          {/* Toast Notifications (global) */}
+          <Toast />
+        </View>
+      </NotificationProvider>
+    </ThemeProvider>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#f8fafc" },
+});
+
+export default BottomNavigationBar;
+
+
+
+//E:\StudioAI_FreshiFy_App_Frontend\components\NotificationContainer.tsx
+import React, { useEffect, useState } from 'react';
+import { useNotifications } from '../contexts/NotificationContext';
+import { AppNotification } from '../types';
+import { InfoIcon, AlertCircleIcon, XIcon, CheckCircleIcon } from './icons/Icons';
+
+const NOTIFICATION_TIMEOUT = 5000;
+
+const NotificationToast: React.FC<{ notification: AppNotification; onDismiss: () => void }> = ({ notification, onDismiss }) => {
+  const [isExiting, setIsExiting] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsExiting(true);
+      setTimeout(onDismiss, 500); // Wait for animation to finish
+    }, NOTIFICATION_TIMEOUT);
+
+    return () => clearTimeout(timer);
+  }, [onDismiss]);
+  
+  const handleDismiss = () => {
+      setIsExiting(true);
+      setTimeout(onDismiss, 500);
+  };
+  
+  const typeStyles = {
+    success: {
+      icon: <CheckCircleIcon className="w-6 h-6 text-green-500" />,
+      bg: 'bg-green-50 dark:bg-green-900/50',
+      border: 'border-green-400 dark:border-green-600',
+    },
+    error: {
+      icon: <AlertCircleIcon className="w-6 h-6 text-red-500" />,
+      bg: 'bg-red-50 dark:bg-red-900/50',
+      border: 'border-red-400 dark:border-red-600',
+    },
+    info: {
+      icon: <InfoIcon className="w-6 h-6 text-sky-500" />,
+      bg: 'bg-sky-50 dark:bg-sky-900/50',
+      border: 'border-sky-400 dark:border-sky-600',
+    },
+    alert: {
+      icon: <AlertCircleIcon className="w-6 h-6 text-yellow-500" />,
+      bg: 'bg-yellow-50 dark:bg-yellow-900/50',
+      border: 'border-yellow-400 dark:border-yellow-600',
+    },
+  };
+
+  const styles = typeStyles[notification.type];
+
+  return (
+    <div className={`w-full max-w-sm rounded-lg shadow-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden my-2 border-l-4 ${styles.border} ${styles.bg} ${isExiting ? 'animate-toast-out' : 'animate-toast-in'}`}>
+      <div className="p-4">
+        <div className="flex items-start">
+          <div className="flex-shrink-0">{styles.icon}</div>
+          <div className="ml-3 w-0 flex-1 pt-0.5">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">{notification.title}</p>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{notification.message}</p>
+          </div>
+          <div className="ml-4 flex-shrink-0 flex">
+            <button onClick={handleDismiss} className="inline-flex text-gray-400 rounded-md hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+              <span className="sr-only">Close</span>
+              <XIcon className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+const NotificationContainer: React.FC = () => {
+  const { notifications, removeNotification } = useNotifications();
+
+  return (
+    <div className="fixed inset-0 flex flex-col items-end px-4 py-6 pointer-events-none sm:p-6 z-50">
+      <div className="w-full max-w-sm">
+        {notifications.map(n => (
+          <NotificationToast key={n.id} notification={n} onDismiss={() => removeNotification(n.id)} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default NotificationContainer;
+
+
+
+//E:\FreshiFy_Mobile_App_Frontend\screens\blog\[id].tsx
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  Image,
+  Dimensions,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
+import Animated, { FadeIn } from "react-native-reanimated";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import API, { API_CONFIG } from "../../config/config";
+
+type Blog = {
+  _id: string;
+  title: string;
+  content?: string;
+  category?: string;
+  author?: string;
+  readTime?: string;
+  tags?: string[];
+  image?: string;
+  createdAt?: string;
+};
+
+export default function BlogDetails() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
+
+  const [post, setPost] = useState<Blog | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+  const [related, setRelated] = useState<Blog[]>([]);
+
+  useEffect(() => {
+    if (!id) return;
+    const ctrl = new AbortController();
+    (async () => {
+      setLoading(true);
+      setErr(null);
+      try {
+        const res = await fetch(`${API.BLOGS}/${id}`, { signal: ctrl.signal });
+        if (res.status === 404) throw new Error("Post not found");
+        if (!res.ok) throw new Error(`Server returned ${res.status}`);
+        const data = await res.json();
+        setPost(data || null);
+      } catch (e: any) {
+        if (e?.name !== "AbortError") {
+          console.error("getBlog error:", e);
+          setErr(e?.message || "Failed to load post");
+        }
+      } finally {
+        setLoading(false);
+      }
+    })();
+    return () => ctrl.abort();
+  }, [id]);
+
+  useEffect(() => {
+    if (!post?.category) return;
+    (async () => {
+      try {
+        const categoryParam = encodeURIComponent(post.category ?? "");
+        const res = await fetch(`${API.BLOGS}?category=${categoryParam}`);
+        if (!res.ok) return setRelated([]);
+        const data = await res.json();
+        const filtered = (data || []).filter((b: Blog) => b._id !== post._id).slice(0, 3);
+        setRelated(filtered);
+      } catch (e) {
+        setRelated([]);
+      }
+    })();
+  }, [post?.category]);
+
+  const imageUri = useMemo(() => {
+    try {
+      if (!post?.image) return null;
+      const url = new URL(post.image);
+      return url.toString();
+    } catch {
+      return `${API_CONFIG.MAIN_BASE_URL.replace(/\/+$/, "")}/${(post?.image || "").replace(/^\/+/, "")}`;
+    }
+  }, [post?.image]);
+
+  if (loading) {
+    return (
+      <View style={[styles.center, { paddingTop: 80 }]}>
+        <ActivityIndicator size="large" color="#2563eb" />
+        <Text style={{ marginTop: 8 }}>Loading…</Text>
+      </View>
+    );
+  }
+
+  if (err || !post) {
+    return (
+      <View style={[styles.center, { paddingTop: 80, padding: 16 }]}>
+        <Text style={{ color: "#ef4444", fontWeight: "600", textAlign: "center" }}>{err || "Not found"}</Text>
+        <Text onPress={() => router.back()} style={{ marginTop: 12, color: "#2563eb", fontWeight: "700" }}>
+          ‹ Back
+        </Text>
+      </View>
+    );
+  }
+
+  const created = post.createdAt ? new Date(post.createdAt) : null;
+  const windowWidth = Dimensions.get("window").width;
+
+  return (
+    <Animated.ScrollView
+      style={{ flex: 1, backgroundColor: "#fff" }}
+      entering={FadeIn}
+      contentContainerStyle={{ paddingBottom: 48 }}
+    >
+      {imageUri && (
+        <Image
+          source={{ uri: imageUri }}
+          style={[styles.hero, { width: windowWidth, height: 240 }]}
+          resizeMode="cover"
+        />
+      )}
+
+      <View style={styles.body}>
+        {!!post.category && <Text style={[styles.category]}>{post.category.toUpperCase()}</Text>}
+        <Text style={[styles.title]}>{post.title}</Text>
+
+        <Text style={[styles.meta]}>
+          {(post.author || "Unknown")} • {(post.readTime || "—")}
+          {created
+            ? ` • ${created.toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}`
+            : ""}
+        </Text>
+
+        {!!(post.tags && post.tags.length) && (
+          <View style={styles.tagsRow}>
+            {post.tags.map((t) => (
+              <View key={t} style={styles.tagChip}>
+                <Text style={styles.tagText}>#{t}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        <Text style={[styles.content]}>{post.content}</Text>
+      </View>
+
+      {related.length > 0 && (
+        <View style={styles.recommendSection}>
+          <Text style={styles.recommendTitle}>📚 Recommended Reads</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {related.map((item) => {
+              const uri = item.image
+                ? (() => {
+                    try {
+                      return new URL(item.image).toString();
+                    } catch {
+                      return `${API_CONFIG.MAIN_BASE_URL.replace(/\/+$/, "")}/${item.image.replace(/^\/+/, "")}`;
+                    }
+                  })()
+                : null;
+              return (
+                <TouchableOpacity key={item._id} style={[styles.card]} activeOpacity={0.9} onPress={() => router.push(`/blog/${item._id}`)}>
+                  {uri ? <Image source={{ uri }} style={styles.cardImage} /> : <View style={[styles.cardImage, { backgroundColor: "#e5e7eb" }]} />}
+                  <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
+                  <Text style={styles.cardMeta} numberOfLines={1}>{item.readTime || "—"}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
+    </Animated.ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  hero: {
+    width: "100%",
+    height: 240,
+  },
+  body: { padding: 20, backgroundColor: "#fff" },
+  category: {
+    fontSize: 13,
+    fontWeight: "800",
+    marginBottom: 6,
+    letterSpacing: 0.5,
+    color: "#16A34A",
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "900",
+    marginBottom: 8,
+    lineHeight: 30,
+  },
+  meta: { fontSize: 13, marginBottom: 14, color: "#6b7280" },
+  tagsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 14,
+  },
+  tagChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: "#E0E7FF",
+    marginRight: 6,
+  },
+  tagText: { fontSize: 12, fontWeight: "700", color: "#3730A3" },
+  content: { fontSize: 16, lineHeight: 26, textAlign: "justify", color: "#111827" },
+  recommendSection: { paddingHorizontal: 16, marginTop: 24 },
+  recommendTitle: { fontSize: 18, fontWeight: "800", marginBottom: 12, color: "#111827" },
+  card: {
+    width: 200,
+    borderRadius: 14,
+    marginRight: 14,
+    padding: 10,
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  cardImage: { width: "100%", height: 110, borderRadius: 10, marginBottom: 8 },
+  cardTitle: { fontWeight: "700", fontSize: 14, marginBottom: 4 },
+  cardMeta: { fontSize: 12, color: "#6b7280" },
+});
+
+
+// screens/DetectionScreen.tsx
+import React, { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Animated,
+  StyleSheet,
+  LayoutRectangle,
+  NativeSyntheticEvent,
+  NativeTouchEvent,
+  Dimensions,
+} from "react-native";
+import Loader from "../components/Loader";
+
+// Lazy-load the sub-views (improves initial bundle size)
+const DetectView = React.lazy(() => import("./detection/DetectView"));
+const AnalyticsScreen = React.lazy(() => import("./AnalyticsScreen"));
+const CostScreen = React.lazy(() => import("./CostScreen"));
+const VeoView = React.lazy(() => import("./detection/SelectionView")); // example mapped to SelectionView
+
+type TabKey = "detect" | "analytics" | "cost" | "veo";
+
+const TAB_CONFIG: { key: TabKey; label: string }[] = [
+  { key: "detect", label: "Detect" },
+  { key: "analytics", label: "Analytics" },
+  { key: "cost", label: "Cost" },
+  { key: "veo", label: "Veo" },
+];
+
+const SCREEN_WIDTH = Dimensions.get("window").width;
+
+const DetectionScreen: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<TabKey>("detect");
+
+  // store measured layout for each tab button
+  const [layouts, setLayouts] = useState<Record<TabKey, LayoutRectangle | null>>({
+    detect: null,
+    analytics: null,
+    cost: null,
+    veo: null,
+  });
+
+  // Animated values for indicator position and width
+  const indicatorX = useRef(new Animated.Value(0)).current;
+  const indicatorWidth = useRef(new Animated.Value(0)).current;
+
+  // keep track if initial measurement done
+  const measuredCount = useRef(0);
+
+  // onLayout handler: store measurement for each tab
+  const onTabLayout = useCallback(
+    (key: TabKey) => (ev: any) => {
+      const layout: LayoutRectangle = ev.nativeEvent.layout;
+      setLayouts((prev) => {
+        const next = { ...prev, [key]: layout };
+        // track measured items
+        measuredCount.current = Object.values(next).filter(Boolean).length;
+        return next;
+      });
+    },
+    []
+  );
+
+  // when active tab or layouts change, animate indicator
+  useEffect(() => {
+    const layout = layouts[activeTab];
+    if (!layout) {
+      // If not measured yet, try to compute a fallback width/position based on index
+      const idx = TAB_CONFIG.findIndex((t) => t.key === activeTab);
+      const fallbackWidth = Math.round(SCREEN_WIDTH / TAB_CONFIG.length) - 24;
+      const fallbackX = Math.round((SCREEN_WIDTH / TAB_CONFIG.length) * idx + 12);
+      Animated.parallel([
+        Animated.spring(indicatorX, {
+          toValue: fallbackX,
+          useNativeDriver: false,
+          tension: 120,
+          friction: 12,
+        }),
+        Animated.spring(indicatorWidth, {
+          toValue: fallbackWidth,
+          useNativeDriver: false,
+          tension: 120,
+          friction: 12,
+        }),
+      ]).start();
+      return;
+    }
+
+    Animated.parallel([
+      Animated.spring(indicatorX, {
+        toValue: layout.x,
+        useNativeDriver: false,
+        tension: 120,
+        friction: 12,
+      }),
+      Animated.spring(indicatorWidth, {
+        toValue: layout.width,
+        useNativeDriver: false,
+        tension: 120,
+        friction: 12,
+      }),
+    ]).start();
+  }, [activeTab, layouts, indicatorX, indicatorWidth]);
+
+  // initial measure effect: when all tabs measured, set indicator to active tab
+  useEffect(() => {
+    if (measuredCount.current >= TAB_CONFIG.length) {
+      const layout = layouts[activeTab];
+      if (layout) {
+        indicatorX.setValue(layout.x);
+        indicatorWidth.setValue(layout.width);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layouts]);
+
+  const onPressTab = (key: TabKey) => {
+    setActiveTab(key);
+  };
+
+  const renderContent = useCallback(() => {
+    switch (activeTab) {
+      case "detect":
+        return (
+          <Suspense fallback={<Loader text="Loading Detect..." />}>
+            <DetectView />
+          </Suspense>
+        );
+      case "analytics":
+        return (
+          <Suspense fallback={<Loader text="Loading Analytics..." />}>
+            <AnalyticsScreen />
+          </Suspense>
+        );
+      case "cost":
+        return (
+          <Suspense fallback={<Loader text="Loading Cost..." />}>
+            <CostScreen />
+          </Suspense>
+        );
+      case "veo":
+        return (
+          <Suspense fallback={<Loader text="Loading..." />}>
+            <VeoView />
+          </Suspense>
+        );
+      default:
+        return null;
+    }
+  }, [activeTab]);
+
+  // computed styles for animated indicator
+  const indicatorStyle = useMemo(
+    () => ({
+      left: indicatorX,
+      width: indicatorWidth,
+    }),
+    [indicatorX, indicatorWidth]
+  );
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.subHeaderContainer}>
+        <View style={styles.tabRow}>
+          {TAB_CONFIG.map((tab) => {
+            const isActive = tab.key === activeTab;
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                onLayout={onTabLayout(tab.key)}
+                onPress={() => onPressTab(tab.key)}
+                activeOpacity={0.8}
+                style={[styles.tabButton, isActive && styles.tabButtonActive]}
+              >
+                <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Animated sliding indicator */}
+        <Animated.View style={[styles.indicator, indicatorStyle]} />
+      </View>
+
+      <View style={styles.contentWrap}>{renderContent()}</View>
+    </View>
+  );
+};
+
+export default DetectionScreen;
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#f8fafc" },
+  subHeaderContainer: {
+    backgroundColor: "#ffffff",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#e6e6e6",
+  },
+  tabRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  tabButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    marginHorizontal: 4,
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    transform: [{ scale: 1 }],
+  },
+  tabButtonActive: {
+    // subtle elevation when active
+    transform: [{ scale: 1.02 }],
+  },
+  tabLabel: {
+    fontSize: 14,
+    color: "#475569",
+    fontWeight: "600",
+  },
+  tabLabelActive: {
+    color: "#0ea5a0",
+  },
+  indicator: {
+    position: "absolute",
+    height: 3,
+    bottom: 0,
+    backgroundColor: "#10b981",
+    borderRadius: 2,
+  },
+  contentWrap: {
+    flex: 1,
+  },
+});
+
+
+//E:\FreshiFy_Mobile_App_Frontend\screens\RecipesScreen.tsx
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
+import { API } from "../config/config";
+import Card from "../components/Card";
+import Loader from "../components/Loader";
+import Toast from "react-native-toast-message";
+import { Ionicons } from "@expo/vector-icons";
+import { Recipe } from "../types";
+
+const RecipesScreen: React.FC = () => {
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+
+  const fetchRecipes = async (search?: string) => {
+    try {
+      setLoading(true);
+      const res = await fetch(API.PREDICT_RECIPES || `${API.MAIN_BASE_URL}/predict-recipes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ingredients: search || "carrot, milk, chicken" }),
+      });
+      const data = await res.json();
+      setRecipes(data?.recipes ?? []);
+    } catch (err) {
+      Toast.show({ type: "error", text1: "Failed to load recipes" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRecipes();
+  }, []);
+
+  const renderRecipe = ({ item }: { item: Recipe }) => (
+    <Card style={styles.card}>
+      <Text style={styles.recipeTitle}>{item.title}</Text>
+      <Text style={styles.section}>🧂 Ingredients:</Text>
+      {item.ingredients.map((ing, idx) => (
+        <Text key={idx} style={styles.textItem}>• {ing}</Text>
+      ))}
+      <Text style={styles.section}>👨‍🍳 Instructions:</Text>
+      {item.instructions.map((step, idx) => (
+        <Text key={idx} style={styles.textItem}>{idx + 1}. {step}</Text>
+      ))}
+      <Text style={styles.time}>⏱ {item.prepTime}</Text>
+    </Card>
+  );
+
+  return (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <View style={styles.header}>
+        <TextInput
+          placeholder="Search by ingredient..."
+          value={query}
+          onChangeText={setQuery}
+          style={styles.input}
+        />
+        <TouchableOpacity style={styles.searchBtn} onPress={() => fetchRecipes(query)}>
+          <Ionicons name="search" color="#fff" size={20} />
+        </TouchableOpacity>
+      </View>
+
+      {loading ? (
+        <Loader text="Fetching delicious recipes..." />
+      ) : (
+        <FlatList
+          data={recipes}
+          renderItem={renderRecipe}
+          keyExtractor={(item, index) => `${item.title}-${index}`}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Image
+                source={require("../assets/animations/recipe.gif")}
+                style={{ width: 120, height: 120 }}
+              />
+              <Text style={styles.emptyText}>No recipes found</Text>
+            </View>
+          }
+        />
+      )}
+    </KeyboardAvoidingView>
+  );
+};
+
+export default RecipesScreen;
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#f8fafc", padding: 12 },
+  header: { flexDirection: "row", marginBottom: 12 },
+  input: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 10,
+    padding: 10,
+    backgroundColor: "#fff",
+  },
+  searchBtn: {
+    backgroundColor: "#2563eb",
+    padding: 12,
+    borderRadius: 10,
+    marginLeft: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  card: { marginBottom: 12 },
+  recipeTitle: { fontSize: 18, fontWeight: "700", color: "#1e293b" },
+  section: { marginTop: 8, fontWeight: "700", color: "#10b981" },
+  textItem: { color: "#475569", fontSize: 13, marginTop: 2 },
+  time: { marginTop: 8, color: "#2563eb", fontWeight: "600" },
+  empty: { alignItems: "center", marginTop: 40 },
+  emptyText: { color: "#64748b", marginTop: 8 },
+});
+
+
+// screens/detection/CameraScanView.tsx
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import Card from "../../components/Card";
+import Loader from "../../components/Loader";
+import StatusBadge from "../../components/StatusBadge";
+import { analyzeImages } from "../../services/apiService";
+import { AnalyzedImage, PredictionCardData } from "../../types";
+import { useNotifications } from "../../contexts/NotificationContext";
+
+const CameraScanView: React.FC<{ goBack: () => void }> = ({ goBack }) => {
+  const { addNotification } = useNotifications();
+  const [images, setImages] = useState<AnalyzedImage[]>([]);
+  const [predictions, setPredictions] = useState<PredictionCardData[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const pickImage = async (source: "camera" | "gallery") => {
+    const options = { mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 };
+    let result;
+    if (source === "camera") result = await ImagePicker.launchCameraAsync(options);
+    else result = await ImagePicker.launchImageLibraryAsync(options);
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const newImage = {
+        id: `${Date.now()}`,
+        file: result.assets[0],
+        preview: result.assets[0].uri,
+      } as any;
+      setImages((prev) => [...prev, newImage].slice(0, 4));
+    }
+  };
+
+  const handleAnalyze = async () => {
+    if (images.length === 0) {
+      Alert.alert("No images", "Please select at least one image.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const files = images.map((i) => i.file);
+      const results = await analyzeImages(files);
+      const newPredictions: PredictionCardData[] = images.map((img, i) => {
+        const result = results[i] || { foodName: "Unknown", status: "Spoiled" };
+        if (result.status === "Spoiled") {
+          addNotification({
+            type: "alert",
+            title: "Spoiled Item Detected",
+            message: `${result.foodName} detected as spoiled.`,
+          });
+        }
+        return {
+          id: `${Date.now()}-${i}`,
+          foodName: result.foodName,
+          status: result.status,
+          imagePreview: img.preview,
+          timestamp: new Date().toLocaleString(),
+        };
+      });
+      setPredictions(newPredictions);
+      setImages([]);
+    } catch (e) {
+      addNotification({
+        type: "error",
+        title: "Analysis Failed",
+        message: "Image analysis failed. Try again.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={{ padding: 16 }}>
+      <TouchableOpacity onPress={goBack}>
+        <Text style={styles.backText}>← Back</Text>
+      </TouchableOpacity>
+
+      <Card>
+        <Text style={styles.title}>Batch Image Analysis</Text>
+
+        <View style={styles.buttonRow}>
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: "#0ea5e9" }]}
+            onPress={() => pickImage("camera")}
+            disabled={images.length >= 4}
+          >
+            <Text style={styles.buttonText}>Scan Photo</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: "#f59e0b" }]}
+            onPress={() => pickImage("gallery")}
+            disabled={images.length >= 4}
+          >
+            <Text style={styles.buttonText}>Upload Images</Text>
+          </TouchableOpacity>
+        </View>
+
+        {images.length > 0 && (
+          <View style={styles.previewGrid}>
+            {images.map((img) => (
+              <Image key={img.id} source={{ uri: img.preview }} style={styles.previewImage} />
+            ))}
+          </View>
+        )}
+
+        {images.length > 0 && (
+          <TouchableOpacity style={styles.analyzeBtn} onPress={handleAnalyze}>
+            <Text style={styles.analyzeText}>
+              {loading ? "Analyzing..." : `Analyze ${images.length} Image(s)`}
+            </Text>
+          </TouchableOpacity>
+        )}
+      </Card>
+
+      {loading && <Loader text="Analyzing images..." />}
+
+      {predictions.length > 0 && (
+        <View style={{ marginTop: 16 }}>
+          <Text style={styles.resultTitle}>Analysis Results</Text>
+          {predictions.map((pred) => (
+            <Card key={pred.id}>
+              <View style={styles.resultRow}>
+                <Image
+                  source={{ uri: pred.imagePreview }}
+                  style={styles.resultImage}
+                  resizeMode="cover"
+                />
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={styles.foodName}>{pred.foodName}</Text>
+                  <StatusBadge status={pred.status} />
+                  <Text style={styles.timestamp}>{pred.timestamp}</Text>
+                </View>
+              </View>
+            </Card>
+          ))}
+        </View>
+      )}
+    </ScrollView>
+  );
+};
+
+export default CameraScanView;
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#f8fafc" },
+  backText: { color: "#059669", fontSize: 16, marginBottom: 10 },
+  title: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
+  buttonRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 10 },
+  button: { flex: 1, marginHorizontal: 4, borderRadius: 8, paddingVertical: 12 },
+  buttonText: { textAlign: "center", color: "#fff", fontWeight: "bold" },
+  previewGrid: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  previewImage: { width: "48%", aspectRatio: 1, borderRadius: 8 },
+  analyzeBtn: { backgroundColor: "#059669", borderRadius: 8, marginTop: 10, paddingVertical: 12 },
+  analyzeText: { color: "#fff", textAlign: "center", fontWeight: "bold" },
+  resultTitle: { fontSize: 20, fontWeight: "700", marginBottom: 10 },
+  resultRow: { flexDirection: "row", alignItems: "center" },
+  resultImage: { width: 80, height: 80, borderRadius: 8 },
+  foodName: { fontSize: 16, fontWeight: "bold", marginBottom: 4 },
+  timestamp: { fontSize: 11, color: "#6b7280", marginTop: 4 },
+});
+
+
+//E:\FreshiFy_Mobile_App_Frontend\services\geminiService.ts
+import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
+import { Recipe } from '../types';
+
+// FIX: Added helper function to convert file to base64 string
+const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+            if (reader.result) {
+                const base64String = (reader.result as string).split(',')[1];
+                resolve(base64String);
+            } else {
+                reject(new Error("FileReader result is null"));
+            }
+        };
+        reader.onerror = error => reject(error);
+    });
+};
+
+export const generateRecipesWithGemini = async (ingredients: string[]): Promise<Recipe[]> => {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+    
+    const prompt = `You are a creative chef for the FreshiFy app. 
+    Given the following ingredients, generate 3 simple and delicious recipes.
+    Ingredients: ${ingredients.join(', ')}.
+    Please ensure the output is a valid JSON array.`;
+
+    try {
+        const response: GenerateContentResponse = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: Type.ARRAY,
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            title: { type: Type.STRING },
+                            ingredients: { type: Type.ARRAY, items: { type: Type.STRING } },
+                            instructions: { type: Type.ARRAY, items: { type: Type.STRING } },
+                            prepTime: { type: Type.STRING, description: "e.g., '25 minutes'" }
+                        },
+                        required: ["title", "ingredients", "instructions", "prepTime"]
+                    },
+                },
+            },
+        });
+        
+        const jsonStr = response.text.trim();
+        return JSON.parse(jsonStr) as Recipe[];
+
+    } catch (error) {
+        console.error("Error generating recipes with Gemini:", error);
+        return [
+            {
+                title: "Error Generating Recipe",
+                ingredients: ["Could not connect to Gemini."],
+                instructions: ["Please check your API key and network connection and try again."],
+                prepTime: "N/A"
+            }
+        ];
+    }
+};
+
+// FIX: Added generateVideoWithVeo function to fix missing export error.
+export const generateVideoWithVeo = async (imageFile: File, prompt: string, aspectRatio: '16:9' | '9:16'): Promise<string> => {
+    // A new instance is created here to ensure the latest API key is used.
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+
+    const imageBytes = await fileToBase64(imageFile);
+
+    let operation = await ai.models.generateVideos({
+        model: 'veo-3.1-fast-generate-preview',
+        prompt: prompt,
+        image: {
+            imageBytes: imageBytes,
+            mimeType: imageFile.type,
+        },
+        config: {
+            numberOfVideos: 1,
+            resolution: '720p', // Sticking with 720p for faster generation
+            aspectRatio: aspectRatio,
+        }
+    });
+
+    while (!operation.done) {
+        // Poll every 10 seconds
+        await new Promise(resolve => setTimeout(resolve, 10000));
+        operation = await ai.operations.getVideosOperation({ operation: operation });
+    }
+
+    const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
+
+    if (!downloadLink) {
+        throw new Error("Video generation succeeded but no download link was provided.");
+    }
+
+    // Fetch the video data and create a blob URL
+    // The API key is required to download the video
+    const response = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
+    if (!response.ok) {
+        const errorBody = await response.text();
+        console.error("Failed to fetch video data. Status:", response.status, "Body:", errorBody);
+        // Check for specific API key error from VeoScreen
+        if (errorBody.includes("Requested entity was not found")) {
+            throw new Error("Requested entity was not found.");
+        }
+        throw new Error(`Failed to fetch video data: ${response.statusText}`);
+    }
+    const videoBlob = await response.blob();
+    return URL.createObjectURL(videoBlob);
+};
+
+//E:\FreshiFy_Mobile_App_Frontend\screens\BlogScreen.tsx
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet, ActivityIndicator, Image, Pressable, FlatList } from "react-native";
+import Animated from "react-native-reanimated";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import API, { API_CONFIG } from "../config/config";
+
+type Blog = {
+  _id: string;
+  title: string;
+  content?: string;
+  category?: string;
+  author?: string;
+  readTime?: string;
+  tags?: string[];
+  image?: string;
+  createdAt?: string;
+};
+
+export default function BlogListScreen() {
+  const router = useRouter();
+  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    (async () => {
+      setLoading(true);
+      setErr(null);
+      try {
+        const res = await fetch(API.BLOGS, { signal: ctrl.signal });
+        if (!res.ok) throw new Error(`Server returned ${res.status}`);
+        const data = await res.json();
+        const list: Blog[] = Array.isArray(data) ? data : data?.items || [];
+        setBlogs(list);
+      } catch (e: any) {
+        if (e?.name !== "AbortError") {
+          console.error("getBlogs error:", e);
+          setErr(e?.message || "Failed to load blogs");
+        }
+      } finally {
+        setLoading(false);
+      }
+    })();
+    return () => ctrl.abort();
+  }, []);
+
+  const resolveImage = (img?: string | null) => {
+    if (!img) return null;
+    // If absolute URL, return it; otherwise prefix with MAIN base url
+    try {
+      const url = new URL(img);
+      return url.toString();
+    } catch {
+      // relative path
+      return `${API_CONFIG.MAIN_BASE_URL.replace(/\/+$/, "")}/${img.replace(/^\/+/, "")}`;
+    }
+  };
+
+  const renderItem = ({ item }: { item: Blog }) => {
+    const imageUri = resolveImage(item.image ?? null);
+    const snippet = (item.content || "").slice(0, 140);
+
+    return (
+      <Pressable
+        onPress={() => router.push(`/blog/${item._id}`)}
+        style={[styles.card, { borderColor: "#e6e6e6" }]}
+      >
+        {imageUri ? <Image source={{ uri: imageUri }} style={styles.thumb} /> : null}
+        <View style={styles.cardBody}>
+          {!!item.category && <Text style={styles.category}>{item.category}</Text>}
+          <Text style={styles.title} numberOfLines={2}>
+            {item.title}
+          </Text>
+          <Text style={styles.snippet} numberOfLines={3}>
+            {snippet}
+          </Text>
+          <Text style={styles.meta}>
+            {(item.author || "Unknown")} • {(item.readTime || "—")}
+          </Text>
+        </View>
+      </Pressable>
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.center, { paddingTop: 80 }]}>
+        <ActivityIndicator size="large" color="#2563eb" />
+        <Text style={{ marginTop: 10 }}>Loading blogs…</Text>
+      </View>
+    );
+  }
+
+  if (err) {
+    return (
+      <View style={[styles.center, { paddingTop: 80, padding: 16 }]}>
+        <Text style={{ color: "#ef4444", fontWeight: "600", textAlign: "center" }}>{err}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <Animated.FlatList
+      data={blogs}
+      keyExtractor={(it) => it._id ?? it.title ?? Math.random().toString()}
+      renderItem={renderItem}
+      contentContainerStyle={{ padding: 16, paddingTop: 0, paddingBottom: 24 }}
+      ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+      ListHeaderComponent={
+        <LinearGradient colors={["#60A5FA", "#2563EB"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.header}>
+          <Text style={styles.headerText}>📰 Freshify Blog</Text>
+        </LinearGradient>
+      }
+      ListEmptyComponent={
+        <View style={[styles.center, { padding: 24 }]}>
+          <Text>No posts yet.</Text>
+        </View>
+      }
+      showsVerticalScrollIndicator={false}
+    />
+  );
+}
+
+const styles = StyleSheet.create({
+  center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  header: {
+    padding: 20,
+    alignItems: "center",
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    marginBottom: 12,
+  },
+  headerText: { fontSize: 24, fontWeight: "900", color: "#fff" },
+  card: { borderRadius: 14, overflow: "hidden", borderWidth: 1, backgroundColor: "#fff" },
+  thumb: { width: "100%", height: 160, resizeMode: "cover" },
+  cardBody: { padding: 12 },
+  category: { color: "#16A34A", fontWeight: "700", marginBottom: 4 },
+  title: { fontSize: 18, fontWeight: "800", marginBottom: 6 },
+  snippet: { fontSize: 14, marginBottom: 8 },
+  meta: { fontSize: 12, color: "#6b7280" },
+});
+
+
+Give Full codes erros fixed

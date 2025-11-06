@@ -1,86 +1,131 @@
-//E:\StudioAI_FreshiFy_App_Frontend\components\NotificationContainer.tsx
-import React, { useEffect, useState } from 'react';
-import { useNotifications } from '../contexts/NotificationContext';
-import { AppNotification } from '../types';
-import { InfoIcon, AlertCircleIcon, XIcon, CheckCircleIcon } from './icons/Icons';
+import React, { useEffect, useState } from "react";
+import { View, Text, TouchableOpacity } from "react-native";
+import { useNotifications } from "../contexts/NotificationContext";
+import { AppNotification, NotificationType } from "../types";
+import {
+  InfoIcon,
+  AlertCircleIcon,
+  XIcon,
+  CheckCircleIcon,
+} from "./icons/Icons";
 
 const NOTIFICATION_TIMEOUT = 5000;
 
-const NotificationToast: React.FC<{ notification: AppNotification; onDismiss: () => void }> = ({ notification, onDismiss }) => {
+interface ToastProps {
+  notification: AppNotification;
+  onDismiss: () => void;
+}
+
+const NotificationToast: React.FC<ToastProps> = ({ notification, onDismiss }) => {
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsExiting(true);
-      setTimeout(onDismiss, 500); // Wait for animation to finish
+      setTimeout(onDismiss, 400);
     }, NOTIFICATION_TIMEOUT);
-
     return () => clearTimeout(timer);
   }, [onDismiss]);
-  
-  const handleDismiss = () => {
-      setIsExiting(true);
-      setTimeout(onDismiss, 500);
-  };
-  
-  const typeStyles = {
+
+  const typeStyles: Record<
+    NotificationType,
+    { icon: React.ReactElement; bg: string; border: string }
+  > = {
     success: {
-      icon: <CheckCircleIcon className="w-6 h-6 text-green-500" />,
-      bg: 'bg-green-50 dark:bg-green-900/50',
-      border: 'border-green-400 dark:border-green-600',
+      icon: <CheckCircleIcon color="#10b981" />,
+      bg: "rgba(16,185,129,0.1)",
+      border: "#10b981",
     },
     error: {
-      icon: <AlertCircleIcon className="w-6 h-6 text-red-500" />,
-      bg: 'bg-red-50 dark:bg-red-900/50',
-      border: 'border-red-400 dark:border-red-600',
+      icon: <AlertCircleIcon color="#ef4444" />,
+      bg: "rgba(239,68,68,0.1)",
+      border: "#ef4444",
     },
     info: {
-      icon: <InfoIcon className="w-6 h-6 text-sky-500" />,
-      bg: 'bg-sky-50 dark:bg-sky-900/50',
-      border: 'border-sky-400 dark:border-sky-600',
+      icon: <InfoIcon color="#0ea5e9" />,
+      bg: "rgba(14,165,233,0.1)",
+      border: "#0ea5e9",
     },
     alert: {
-      icon: <AlertCircleIcon className="w-6 h-6 text-yellow-500" />,
-      bg: 'bg-yellow-50 dark:bg-yellow-900/50',
-      border: 'border-yellow-400 dark:border-yellow-600',
+      icon: <AlertCircleIcon color="#facc15" />,
+      bg: "rgba(250,204,21,0.1)",
+      border: "#facc15",
+    },
+
+    // ✅ Added extended custom notification types
+    spoiled_alert: {
+      icon: <AlertCircleIcon color="#dc2626" />,
+      bg: "rgba(239,68,68,0.15)",
+      border: "#dc2626",
+    },
+    cost_update: {
+      icon: <InfoIcon color="#3b82f6" />,
+      bg: "rgba(59,130,246,0.15)",
+      border: "#3b82f6",
+    },
+    high_gas: {
+      icon: <AlertCircleIcon color="#f97316" />,
+      bg: "rgba(249,115,22,0.15)",
+      border: "#f97316",
+    },
+    reminder: {
+      icon: <CheckCircleIcon color="#22c55e" />,
+      bg: "rgba(34,197,94,0.15)",
+      border: "#22c55e",
     },
   };
 
-  const styles = typeStyles[notification.type];
+  const style = typeStyles[notification.type];
 
   return (
-    <div className={`w-full max-w-sm rounded-lg shadow-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden my-2 border-l-4 ${styles.border} ${styles.bg} ${isExiting ? 'animate-toast-out' : 'animate-toast-in'}`}>
-      <div className="p-4">
-        <div className="flex items-start">
-          <div className="flex-shrink-0">{styles.icon}</div>
-          <div className="ml-3 w-0 flex-1 pt-0.5">
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">{notification.title}</p>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{notification.message}</p>
-          </div>
-          <div className="ml-4 flex-shrink-0 flex">
-            <button onClick={handleDismiss} className="inline-flex text-gray-400 rounded-md hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
-              <span className="sr-only">Close</span>
-              <XIcon className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <View
+      style={{
+        borderLeftWidth: 4,
+        borderLeftColor: style.border,
+        backgroundColor: style.bg,
+        marginVertical: 5,
+        borderRadius: 8,
+        padding: 10,
+        flexDirection: "row",
+        alignItems: "center",
+        opacity: isExiting ? 0.5 : 1,
+      }}
+    >
+      {style.icon}
+      <View style={{ marginLeft: 10, flex: 1 }}>
+        <Text style={{ fontWeight: "700", color: "#111" }}>
+          {notification.title}
+        </Text>
+        <Text style={{ fontSize: 13, color: "#333" }}>
+          {notification.message}
+        </Text>
+      </View>
+      <TouchableOpacity onPress={onDismiss}>
+        <XIcon color="#6b7280" />
+      </TouchableOpacity>
+    </View>
   );
 };
 
-
-const NotificationContainer: React.FC = () => {
+export const NotificationContainer: React.FC = () => {
   const { notifications, removeNotification } = useNotifications();
-
   return (
-    <div className="fixed inset-0 flex flex-col items-end px-4 py-6 pointer-events-none sm:p-6 z-50">
-      <div className="w-full max-w-sm">
-        {notifications.map(n => (
-          <NotificationToast key={n.id} notification={n} onDismiss={() => removeNotification(n.id)} />
-        ))}
-      </div>
-    </div>
+    <View
+      style={{
+        position: "absolute",
+        right: 16,
+        bottom: 16,
+        zIndex: 999,
+      }}
+    >
+      {notifications.map((n) => (
+        <NotificationToast
+          key={n.id}
+          notification={n}
+          onDismiss={() => removeNotification(n.id)}
+        />
+      ))}
+    </View>
   );
 };
 

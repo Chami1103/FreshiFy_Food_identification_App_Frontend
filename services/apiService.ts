@@ -27,7 +27,12 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
 }
 
 const showToast = (type: "success" | "error" | "info", msg: string) => {
-  Toast.show({ type, text1: type.toUpperCase(), text2: msg, visibilityTime: 2500 });
+  Toast.show({
+    type,
+    text1: type.toUpperCase(),
+    text2: msg,
+    visibilityTime: 2500,
+  });
 };
 
 const cacheData = async (key: string, data: any) => {
@@ -154,13 +159,11 @@ export const getPredictionHistory = async (): Promise<PredictionHistoryItem[]> =
     timestamp: i.createdAt ?? new Date().toISOString(),
     imageUrl: `${API.HEALTH_IMAGE.replace("/health", "/uploads/")}${i.file ?? ""}`,
   }));
-  return [...s, ...c].sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-  );
+  return [...s, ...c].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 };
 
 /* ===========================================================
-   📰 Blog & Notifications
+   📰 Blogs & Notifications
    =========================================================== */
 
 export const getBlogs = async (): Promise<BlogPost[]> => {
@@ -184,6 +187,42 @@ export const getNotifications = async (): Promise<Notification[]> => {
     icon: "info",
     title: n.message ?? "Notification",
     timestamp: new Date(n.createdAt).toISOString(),
-    read: n.read ?? false,
   }));
+};
+
+/* ===========================================================
+   🧠 Image Analysis (used in CameraScanView)
+   =========================================================== */
+
+export const analyzeImages = async (
+  files: any[]
+): Promise<{ foodName: string; status: string }[]> => {
+  try {
+    const formData = new FormData();
+    files.forEach((file: any, index: number) => {
+      formData.append("files", {
+        uri: file.uri,
+        name: file.fileName || `image_${index}.jpg`,
+        type: file.type || "image/jpeg",
+      } as any);
+    });
+
+    const res = await fetch(API.PREDICT_IMAGE, {
+      method: "POST",
+      headers: { "Content-Type": "multipart/form-data" },
+      body: formData,
+    });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    // Normalize result
+    if (Array.isArray(data)) return data;
+    if (data?.results) return data.results;
+    return [data];
+  } catch (err) {
+    console.error("[analyzeImages] Error:", err);
+    showToast("error", "Image analysis failed. Try again later.");
+    return [];
+  }
 };
