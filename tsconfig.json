@@ -1,31 +1,33 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "./node_modules/expo/tsconfig.base",
   "compilerOptions": {
-    /* === Language & Output === */
-    "target": "ESNext",
+    "target": "ES2022",
     "module": "ESNext",
-    "lib": ["ESNext", "DOM"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
 
-    /* === Type Safety & Compatibility === */
     "strict": true,
     "skipLibCheck": true,
     "allowJs": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
 
-    /* === Modern Module Resolution === */
-    "moduleResolution": "bundler", 
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
 
-    /* === Global Types === */
-    "types": ["react", "react-dom", "node"],
+    "types": ["@types/react", "@types/react-dom", "@types/node"],
 
-    /* === Path Mapping === */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["*"]
+      "@/*": ["./*"],
+      "@/config/*": ["config/*"],
+      "@/screens/*": ["screens/*"],
+      "@/services/*": ["services/*"],
+      "@/components/*": ["components/*"],
+      "@/contexts/*": ["contexts/*"]
     }
   },
   "include": [
@@ -33,12 +35,14 @@
     "**/*.tsx",
     "index.tsx",
     "app/**/*",
-    "components/**/*",
     "screens/**/*",
+    "components/**/*",
     "services/**/*",
     "contexts/**/*",
     "hooks/**/*",
-    "utils/**/*"
+    "utils/**/*",
+    "config/**/*",
+    "types/**/*"
   ],
   "exclude": ["node_modules"]
 }

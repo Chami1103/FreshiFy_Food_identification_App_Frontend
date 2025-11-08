@@ -1,3 +1,4 @@
+// app.config.js
 import "dotenv/config";
 
 export default {
@@ -19,11 +20,18 @@ export default {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#ffffff",
       },
-      permissions: ["CAMERA", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"],
+      permissions: [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+      ],
     },
     ios: { supportsTablet: true },
 
-    // ✅ Inject environment variables
+    // ✅ Add this section (the one Expo told you to)
+    plugins: ["expo-font"],
+
+    // ✅ Inject environment variables from .env or EAS
     extra: {
       EXPO_PUBLIC_BACKEND_HOST: process.env.EXPO_PUBLIC_BACKEND_HOST,
       EXPO_PUBLIC_SENSOR_PORT: process.env.EXPO_PUBLIC_SENSOR_PORT,

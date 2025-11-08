@@ -1,8 +1,0 @@
-node_modules
-.vscode
-.env.local
-.git
-*.log
-*.lock
-*.tmp
-*.cache

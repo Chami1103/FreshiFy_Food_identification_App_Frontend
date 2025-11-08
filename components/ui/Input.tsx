@@ -1,3 +1,4 @@
+//E:\FreshiFy_Mobile_App_Frontend\components\ui\Input.tsx
 import React from "react";
 import { View, TextInput, Text, StyleSheet, ViewStyle, TextStyle } from "react-native";
 

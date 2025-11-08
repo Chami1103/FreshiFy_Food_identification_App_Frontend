@@ -2,12 +2,11 @@
 import React, { useEffect, useRef } from "react";
 import { Animated, TouchableOpacity, Easing, StyleSheet } from "react-native";
 import { useTheme } from "../contexts/ThemeContext";
-import { SunIcon, MoonIcon } from "./icons/Icons";
+import { SunIcon, MoonIcon } from "./icons/Icons"; // Make sure these exist (SVG or RN-Vector)
 
 const ThemeToggle: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
 
-  // Animation for smooth transition
   const rotateAnim = useRef(new Animated.Value(theme === "light" ? 0 : 1)).current;
 
   useEffect(() => {
@@ -17,9 +16,8 @@ const ThemeToggle: React.FC = () => {
       easing: Easing.inOut(Easing.ease),
       useNativeDriver: true,
     }).start();
-  }, [theme]);
+  }, [theme, rotateAnim]);
 
-  // Interpolate rotation & opacity
   const rotateInterpolate = rotateAnim.interpolate({
     inputRange: [0, 1],
     outputRange: ["0deg", "180deg"],
@@ -40,9 +38,9 @@ const ThemeToggle: React.FC = () => {
       onPress={toggleTheme}
       activeOpacity={0.8}
       style={styles.button}
+      accessibilityRole="button"
       accessibilityLabel={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
     >
-      {/* Animated rotation container */}
       <Animated.View
         style={{
           transform: [{ rotate: rotateInterpolate }],
@@ -53,7 +51,9 @@ const ThemeToggle: React.FC = () => {
         <Animated.View style={[styles.iconWrapper, { opacity: sunOpacity }]}>
           <SunIcon width={24} height={24} color="#facc15" />
         </Animated.View>
-        <Animated.View style={[styles.iconWrapper, { opacity: moonOpacity, position: "absolute" }]}>
+        <Animated.View
+          style={[styles.iconWrapper, { opacity: moonOpacity, position: "absolute" }]}
+        >
           <MoonIcon width={24} height={24} color="#fbbf24" />
         </Animated.View>
       </Animated.View>
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(226,232,240,0.4)", // light gray backdrop
+    backgroundColor: "rgba(226,232,240,0.4)",
   },
   iconWrapper: {
     alignItems: "center",

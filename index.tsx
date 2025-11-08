@@ -1,7 +1,7 @@
-// E:\StudioAI_FreshiFy_App_Frontend\index.tsx
+import React from "react";
+import { ExpoRoot } from "expo-router";
 
-// ✅ Entry point for the FreshiFy Mobile App
-// Expo Router automatically manages navigation and providers.
-// Do NOT manually render App or use ReactDOM — this is not a web app.
-
-import "expo-router/entry";
+export default function App() {
+  const ctx = (require as any).context("./app", true, /\.tsx?$/);
+  return <ExpoRoot context={ctx} />;
+}

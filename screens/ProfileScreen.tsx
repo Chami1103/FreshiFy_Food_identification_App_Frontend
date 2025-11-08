@@ -1,3 +1,4 @@
+// screens/ProfileScreen.tsx
 import React from "react";
 import {
   View,
@@ -21,159 +22,116 @@ const ProfileScreen: React.FC = () => {
         { backgroundColor: isDark ? "#0f172a" : "#f8fafc" },
       ]}
     >
+      {/* 👤 Header Section */}
       <View style={styles.header}>
         <Image
           source={require("../assets/images/profile-avatar.png")}
           style={styles.avatar}
         />
         <Text style={[styles.name, { color: isDark ? "#f8fafc" : "#111827" }]}>
-          Freshify User
+          FreshiFy User
         </Text>
         <Text style={{ color: isDark ? "#94a3b8" : "#475569" }}>
           Sustainable Living Advocate 🌿
         </Text>
       </View>
 
-      <View style={styles.section}>
-        <Text
-          style={[
-            styles.sectionTitle,
-            { color: isDark ? "#f1f5f9" : "#1e293b" },
-          ]}
-        >
-          Account
-        </Text>
-        <View style={styles.card}>
-          <TouchableOpacity style={styles.item}>
-            <Ionicons
-              name="person-circle-outline"
-              size={22}
-              color={isDark ? "#38bdf8" : "#2563eb"}
-            />
-            <Text
-              style={[
-                styles.itemText,
-                { color: isDark ? "#f8fafc" : "#1e293b" },
-              ]}
-            >
-              Edit Profile
-            </Text>
-          </TouchableOpacity>
+      {/* ⚙️ Account Section */}
+      <Section title="Account" isDark={isDark}>
+        <ProfileItem
+          icon="person-circle-outline"
+          label="Edit Profile"
+          isDark={isDark}
+        />
+        <ProfileItem
+          icon="key-outline"
+          label="Change Password"
+          isDark={isDark}
+        />
+      </Section>
 
-          <TouchableOpacity style={styles.item}>
-            <Ionicons
-              name="key-outline"
-              size={22}
-              color={isDark ? "#38bdf8" : "#2563eb"}
-            />
-            <Text
-              style={[
-                styles.itemText,
-                { color: isDark ? "#f8fafc" : "#1e293b" },
-              ]}
-            >
-              Change Password
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      {/* 🌙 Preferences Section */}
+      <Section title="Preferences" isDark={isDark}>
+        <ProfileItem
+          icon={isDark ? "moon-outline" : "sunny-outline"}
+          label={`Switch to ${isDark ? "Light" : "Dark"} Mode`}
+          isDark={isDark}
+          onPress={toggleTheme}
+        />
+        <ProfileItem
+          icon="notifications-outline"
+          label="Notification Settings"
+          isDark={isDark}
+        />
+      </Section>
 
-      <View style={styles.section}>
-        <Text
-          style={[
-            styles.sectionTitle,
-            { color: isDark ? "#f1f5f9" : "#1e293b" },
-          ]}
-        >
-          Preferences
-        </Text>
-        <View style={styles.card}>
-          <TouchableOpacity
-            style={styles.item}
-            onPress={toggleTheme}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={isDark ? "moon-outline" : "sunny-outline"}
-              size={22}
-              color={isDark ? "#38bdf8" : "#2563eb"}
-            />
-            <Text
-              style={[
-                styles.itemText,
-                { color: isDark ? "#f8fafc" : "#1e293b" },
-              ]}
-            >
-              Switch to {isDark ? "Light" : "Dark"} Mode
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.item}>
-            <Ionicons
-              name="notifications-outline"
-              size={22}
-              color={isDark ? "#38bdf8" : "#2563eb"}
-            />
-            <Text
-              style={[
-                styles.itemText,
-                { color: isDark ? "#f8fafc" : "#1e293b" },
-              ]}
-            >
-              Notification Settings
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text
-          style={[
-            styles.sectionTitle,
-            { color: isDark ? "#f1f5f9" : "#1e293b" },
-          ]}
-        >
-          About
-        </Text>
-        <View style={styles.card}>
-          <TouchableOpacity style={styles.item}>
-            <Ionicons
-              name="information-circle-outline"
-              size={22}
-              color={isDark ? "#38bdf8" : "#2563eb"}
-            />
-            <Text
-              style={[
-                styles.itemText,
-                { color: isDark ? "#f8fafc" : "#1e293b" },
-              ]}
-            >
-              App Version 1.0.0
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.item}>
-            <Ionicons
-              name="help-circle-outline"
-              size={22}
-              color={isDark ? "#38bdf8" : "#2563eb"}
-            />
-            <Text
-              style={[
-                styles.itemText,
-                { color: isDark ? "#f8fafc" : "#1e293b" },
-              ]}
-            >
-              Help & Support
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      {/* ℹ️ About Section */}
+      <Section title="About" isDark={isDark}>
+        <ProfileItem
+          icon="information-circle-outline"
+          label="App Version 1.0.0"
+          isDark={isDark}
+        />
+        <ProfileItem
+          icon="help-circle-outline"
+          label="Help & Support"
+          isDark={isDark}
+        />
+      </Section>
     </ScrollView>
   );
 };
 
+/* 🔹 Reusable Section Wrapper */
+const Section: React.FC<{ title: string; isDark: boolean; children: React.ReactNode }> = ({
+  title,
+  isDark,
+  children,
+}) => (
+  <View style={styles.section}>
+    <Text
+      style={[
+        styles.sectionTitle,
+        { color: isDark ? "#f1f5f9" : "#1e293b" },
+      ]}
+    >
+      {title}
+    </Text>
+    <View style={[styles.card, isDark && styles.cardDark]}>{children}</View>
+  </View>
+);
+
+/* 🔹 Reusable Item Component */
+const ProfileItem: React.FC<{
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  isDark: boolean;
+  onPress?: () => void;
+}> = ({ icon, label, isDark, onPress }) => (
+  <TouchableOpacity
+    style={styles.item}
+    onPress={onPress}
+    activeOpacity={onPress ? 0.7 : 1}
+  >
+    <Ionicons
+      name={icon}
+      size={22}
+      color={isDark ? "#38bdf8" : "#2563eb"}
+    />
+    <Text
+      style={[
+        styles.itemText,
+        { color: isDark ? "#f8fafc" : "#1e293b" },
+      ]}
+    >
+      {label}
+    </Text>
+  </TouchableOpacity>
+);
+
 export default ProfileScreen;
+
+/* ---------------- 🎨 STYLES ---------------- */
 
 const styles = StyleSheet.create({
   container: {
@@ -213,12 +171,15 @@ const styles = StyleSheet.create({
     elevation: 3,
     overflow: "hidden",
   },
+  cardDark: {
+    backgroundColor: "#1e293b",
+  },
   item: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 14,
     paddingHorizontal: 16,
-    borderBottomWidth: 0.3,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#e2e8f0",
   },
   itemText: {

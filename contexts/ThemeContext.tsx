@@ -1,3 +1,4 @@
+// contexts/ThemeContext.tsx
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Appearance } from "react-native";
 
@@ -16,12 +17,11 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     Appearance.getColorScheme() === "dark" ? "dark" : "light"
   );
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
-  };
+  const toggleTheme = () => setTheme((prev) => (prev === "light" ? "dark" : "light"));
 
   useEffect(() => {
-    // Optional: Save to AsyncStorage if you want persistence
+    // ✅ Optional future persistence
+    // AsyncStorage.setItem("user-theme", theme);
   }, [theme]);
 
   return (
@@ -31,4 +31,4 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 };
 
-export const useTheme = () => useContext(ThemeContext);
+export const useTheme = (): ThemeContextType => useContext(ThemeContext);
