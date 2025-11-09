@@ -575,6 +575,52 @@ const styles = StyleSheet.create({
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------
 
+//E:\FreshiFy_Mobile_App_Frontend\.github\workflows\current-to-main.yml
 
+name: Validate & Auto-Merge _current → main
 
+on:
+  push:
+    branches:
+      - _current
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PERSONAL_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript build check
+        run: npm run tsc --noEmit
+
+      - name: Expo prebuild validation
+        run: npx expo prebuild --non-interactive
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge _current into main
+        run: |
+          git fetch origin main
+          git checkout main
+          git merge origin/_current --no-edit
+          git push origin main
 

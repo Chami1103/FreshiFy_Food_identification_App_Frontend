@@ -9,6 +9,7 @@ import {
   Platform,
   Image,
   Easing,
+  Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -31,14 +32,19 @@ interface Notification {
   read?: boolean;
 }
 
+const SCREEN_WIDTH = Dimensions.get("window").width;
+
 const Header: React.FC<HeaderProps> = ({ isHeaderVisible }) => {
   const { theme } = useTheme();
   const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  // 🎞️ Animations
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const translateY = useRef(new Animated.Value(0)).current;
+  const blurIntensity = useRef(new Animated.Value(40)).current;
+  const parallaxShift = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -67,6 +73,18 @@ const Header: React.FC<HeaderProps> = ({ isHeaderVisible }) => {
         toValue: isHeaderVisible ? 0 : -80,
         duration: 250,
         easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
+      Animated.timing(blurIntensity, {
+        toValue: isHeaderVisible ? 80 : 30,
+        duration: 250,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: false,
+      }),
+      Animated.timing(parallaxShift, {
+        toValue: isHeaderVisible ? 0 : -10,
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
     ]).start();
@@ -101,56 +119,68 @@ const Header: React.FC<HeaderProps> = ({ isHeaderVisible }) => {
           { opacity: fadeAnim, transform: [{ translateY }] },
         ]}
       >
-        <BlurView
-          intensity={90}
-          tint={theme === "light" ? "light" : "dark"}
-          style={styles.blurContainer}
+        <Animated.View
+          style={{
+            transform: [{ translateY: parallaxShift }],
+          }}
         >
-          {/* Left: Logo */}
-          <TouchableOpacity
-            style={styles.left}
-            onPress={() => router.push("/profile")}
-            activeOpacity={0.8}
+          <BlurView
+            intensity={blurIntensity as any}
+            tint={theme === "light" ? "light" : "dark"}
+            style={styles.blurContainer}
           >
-            <Image
-              source={require("../assets/images/profile-avatar.png")}
-              style={styles.avatar}
-            />
-          </TouchableOpacity>
-
-          {/* Center: Brand */}
-          <View style={styles.center}>
-            <Text
-              style={[
-                styles.brand,
-                { color: theme === "light" ? "#0f172a" : "#f8fafc" },
-              ]}
-            >
-              FreshiFy
-            </Text>
-          </View>
-
-          {/* Right: Toggle + Notification */}
-          <View style={styles.right}>
-            <ThemeToggle />
+            {/* Left: Avatar */}
             <TouchableOpacity
-              onPress={() => router.push("/notifications")}
-              style={styles.iconButton}
-              activeOpacity={0.7}
+              style={styles.left}
+              onPress={() => router.push("/profile")}
+              activeOpacity={0.8}
             >
-              <Ionicons
-                name="notifications-outline"
-                size={23}
-                color={unreadCount > 0 ? "#facc15" : theme === "light" ? "#1e293b" : "#f8fafc"}
+              <Image
+                source={require("../assets/images/profile-avatar.png")}
+                style={styles.avatar}
               />
-              {unreadCount > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{unreadCount}</Text>
-                </View>
-              )}
             </TouchableOpacity>
-          </View>
-        </BlurView>
+
+            {/* Center: Brand */}
+            <View style={styles.center}>
+              <Text
+                style={[
+                  styles.brand,
+                  { color: theme === "light" ? "#0f172a" : "#f8fafc" },
+                ]}
+              >
+                FreshiFy
+              </Text>
+            </View>
+
+            {/* Right: Theme + Notifications */}
+            <View style={styles.right}>
+              <ThemeToggle />
+              <TouchableOpacity
+                onPress={() => router.push("/notifications")}
+                style={styles.iconButton}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name="notifications-outline"
+                  size={23}
+                  color={
+                    unreadCount > 0
+                      ? "#facc15"
+                      : theme === "light"
+                      ? "#1e293b"
+                      : "#f8fafc"
+                  }
+                />
+                {unreadCount > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{unreadCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          </BlurView>
+        </Animated.View>
       </Animated.View>
 
       {latest && (
@@ -184,22 +214,30 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 50,
-    elevation: 6,
+    zIndex: 100,
+    elevation: 10,
   },
   blurContainer: {
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight ?? 20 : 48,
-    paddingHorizontal: 16,
-    paddingBottom: 10,
+    width: SCREEN_WIDTH,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight ?? 20 : 50,
+    paddingHorizontal: 18,
+    paddingBottom: 12,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    backdropFilter: "blur(12px)",
   },
   left: { flex: 0.2, alignItems: "flex-start" },
   center: { flex: 0.6, alignItems: "center" },
   right: { flex: 0.2, flexDirection: "row", justifyContent: "flex-end" },
-  avatar: { width: 34, height: 34, borderRadius: 17 },
-  brand: { fontSize: 18, fontWeight: "700", letterSpacing: 0.3 },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1.2,
+    borderColor: "#94a3b8",
+  },
+  brand: { fontSize: 20, fontWeight: "800", letterSpacing: 0.5 },
   iconButton: { marginLeft: 14, position: "relative" },
   badge: {
     position: "absolute",
@@ -213,6 +251,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   badgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
-  alertBar: { paddingVertical: 4, alignItems: "center" },
-  alertText: { fontSize: 12 },
+  alertBar: {
+    paddingVertical: 4,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  alertText: { fontSize: 12, fontWeight: "500" },
 });
