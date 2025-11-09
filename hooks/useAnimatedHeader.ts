@@ -1,3 +1,4 @@
+//E:\FreshiFy_Mobile_App_Frontend\hooks\useAnimatedHeader.ts
 import { useState, useRef } from "react";
 import { NativeSyntheticEvent, NativeScrollEvent } from "react-native";
 

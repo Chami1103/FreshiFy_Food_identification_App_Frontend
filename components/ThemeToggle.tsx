@@ -1,8 +1,7 @@
-// components/ThemeToggle.tsx
 import React, { useEffect, useRef } from "react";
 import { Animated, TouchableOpacity, Easing, StyleSheet } from "react-native";
 import { useTheme } from "../contexts/ThemeContext";
-import { SunIcon, MoonIcon } from "./icons/Icons"; // Make sure these exist (SVG or RN-Vector)
+import { SunIcon, MoonIcon } from "./icons/Icons";
 
 const ThemeToggle: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
@@ -49,12 +48,12 @@ const ThemeToggle: React.FC = () => {
         }}
       >
         <Animated.View style={[styles.iconWrapper, { opacity: sunOpacity }]}>
-          <SunIcon width={24} height={24} color="#facc15" />
+          <SunIcon width={22} height={22} color="#facc15" />
         </Animated.View>
         <Animated.View
           style={[styles.iconWrapper, { opacity: moonOpacity, position: "absolute" }]}
         >
-          <MoonIcon width={24} height={24} color="#fbbf24" />
+          <MoonIcon width={22} height={22} color="#fbbf24" />
         </Animated.View>
       </Animated.View>
     </TouchableOpacity>

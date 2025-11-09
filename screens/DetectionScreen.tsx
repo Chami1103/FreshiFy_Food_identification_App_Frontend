@@ -1,11 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  Suspense,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState, Suspense } from "react";
 import {
   View,
   Text,
@@ -14,103 +7,61 @@ import {
   StyleSheet,
   LayoutRectangle,
   Dimensions,
+  Platform,
+  StatusBar,
 } from "react-native";
 import Loader from "../components/Loader";
+import { useTheme } from "../contexts/ThemeContext";
 
-// Lazy-load sub-screens
 const DetectView = React.lazy(() => import("./detection/DetectView"));
 const AnalyticsScreen = React.lazy(() => import("./AnalyticsScreen"));
 const CostScreen = React.lazy(() => import("./CostScreen"));
 const VeoView = React.lazy(() => import("./detection/SelectionView"));
 
 type TabKey = "detect" | "analytics" | "cost" | "veo";
-
 const TAB_CONFIG: { key: TabKey; label: string }[] = [
   { key: "detect", label: "Detect" },
   { key: "analytics", label: "Analytics" },
   { key: "cost", label: "Cost" },
-  { key: "veo", label: "Veo" },
+  { key: "veo", label: "Modes" },
 ];
-
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
 const DetectionScreen: React.FC = () => {
+  const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState<TabKey>("detect");
-  const [layouts, setLayouts] = useState<
-    Record<TabKey, LayoutRectangle | null>
-  >({
+  const [layouts, setLayouts] = useState<Record<TabKey, LayoutRectangle | null>>({
     detect: null,
     analytics: null,
     cost: null,
     veo: null,
   });
-
   const indicatorX = useRef(new Animated.Value(0)).current;
   const indicatorWidth = useRef(new Animated.Value(0)).current;
-  const measuredCount = useRef(0);
 
   const onTabLayout = useCallback(
     (key: TabKey) => (ev: any) => {
       const layout: LayoutRectangle = ev.nativeEvent.layout;
-      setLayouts((prev) => {
-        const next = { ...prev, [key]: layout };
-        measuredCount.current = Object.values(next).filter(Boolean).length;
-        return next;
-      });
+      setLayouts((prev) => ({ ...prev, [key]: layout }));
     },
     []
   );
 
   useEffect(() => {
     const layout = layouts[activeTab];
-    if (!layout) {
-      const idx = TAB_CONFIG.findIndex((t) => t.key === activeTab);
-      const fallbackWidth = Math.round(SCREEN_WIDTH / TAB_CONFIG.length) - 24;
-      const fallbackX = Math.round((SCREEN_WIDTH / TAB_CONFIG.length) * idx + 12);
-      Animated.parallel([
-        Animated.spring(indicatorX, {
-          toValue: fallbackX,
-          useNativeDriver: false,
-          tension: 120,
-          friction: 12,
-        }),
-        Animated.spring(indicatorWidth, {
-          toValue: fallbackWidth,
-          useNativeDriver: false,
-          tension: 120,
-          friction: 12,
-        }),
-      ]).start();
-      return;
-    }
-
+    if (!layout) return;
     Animated.parallel([
-      Animated.spring(indicatorX, {
-        toValue: layout.x,
-        useNativeDriver: false,
-        tension: 120,
-        friction: 12,
-      }),
-      Animated.spring(indicatorWidth, {
-        toValue: layout.width,
-        useNativeDriver: false,
-        tension: 120,
-        friction: 12,
-      }),
+      Animated.spring(indicatorX, { toValue: layout.x, useNativeDriver: false }),
+      Animated.spring(indicatorWidth, { toValue: layout.width, useNativeDriver: false }),
     ]).start();
-  }, [activeTab, layouts, indicatorX, indicatorWidth]);
+  }, [activeTab, layouts]);
 
-  useEffect(() => {
-    if (measuredCount.current >= TAB_CONFIG.length) {
-      const layout = layouts[activeTab];
-      if (layout) {
-        indicatorX.setValue(layout.x);
-        indicatorWidth.setValue(layout.width);
-      }
-    }
-  }, [layouts]);
+  const indicatorStyle = useMemo(
+    () => ({ left: indicatorX, width: indicatorWidth }),
+    [indicatorX, indicatorWidth]
+  );
 
-  const renderContent = useCallback(() => {
+  const renderContent = () => {
     switch (activeTab) {
       case "detect":
         return (
@@ -132,52 +83,83 @@ const DetectionScreen: React.FC = () => {
         );
       case "veo":
         return (
-          <Suspense fallback={<Loader text="Loading Veo..." />}>
-            {/* ✅ FIX: Added required prop */}
+          <Suspense fallback={<Loader text="Loading Modes..." />}>
             <VeoView setMode={() => {}} />
           </Suspense>
         );
       default:
         return null;
     }
-  }, [activeTab]);
-
-  const indicatorStyle = useMemo(
-    () => ({
-      left: indicatorX,
-      width: indicatorWidth,
-    }),
-    [indicatorX, indicatorWidth]
-  );
+  };
 
   return (
-    <View style={styles.container}>
-      {/* Subheader Tabs */}
-      <View style={styles.subHeaderContainer}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: theme === "light" ? "#f8fafc" : "#0f172a" },
+      ]}
+    >
+      <View
+        style={[
+          styles.subHeader,
+          {
+            backgroundColor: theme === "light" ? "#ffffff" : "#1e293b",
+            borderBottomColor: theme === "light" ? "#d1d5db" : "#334155",
+          },
+        ]}
+      >
         <View style={styles.tabRow}>
           {TAB_CONFIG.map((tab) => {
-            const isActive = tab.key === activeTab;
+            const isActive = activeTab === tab.key;
             return (
               <TouchableOpacity
                 key={tab.key}
                 onLayout={onTabLayout(tab.key)}
                 onPress={() => setActiveTab(tab.key)}
-                activeOpacity={0.8}
-                style={[styles.tabButton, isActive && styles.tabButtonActive]}
+                activeOpacity={0.9}
+                style={[
+                  styles.tabButton,
+                  isActive && {
+                    backgroundColor:
+                      theme === "light" ? "#e0f2fe" : "#2563eb22",
+                    borderColor:
+                      theme === "light" ? "#2563eb" : "#60a5fa",
+                  },
+                ]}
               >
-                <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
+                <Text
+                  style={[
+                    styles.tabLabel,
+                    {
+                      color: isActive
+                        ? theme === "light"
+                          ? "#2563eb"
+                          : "#60a5fa"
+                        : theme === "light"
+                        ? "#6b7280"
+                        : "#94a3b8",
+                    },
+                  ]}
+                >
                   {tab.label}
                 </Text>
               </TouchableOpacity>
             );
           })}
         </View>
-
-        {/* Animated indicator */}
-        <Animated.View style={[styles.indicator, indicatorStyle]} />
+        <Animated.View
+          style={[
+            styles.indicator,
+            indicatorStyle,
+            {
+              backgroundColor:
+                theme === "light" ? "#2563eb" : "#60a5fa",
+            },
+          ]}
+        />
       </View>
 
-      <View style={styles.contentWrap}>{renderContent()}</View>
+      <View style={{ flex: 1 }}>{renderContent()}</View>
     </View>
   );
 };
@@ -185,48 +167,32 @@ const DetectionScreen: React.FC = () => {
 export default DetectionScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8fafc" },
-  subHeaderContainer: {
-    backgroundColor: "#ffffff",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+  container: { flex: 1 },
+  subHeader: {
+    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight ?? 40) + 10 : 60,
+    paddingBottom: 8,
     borderBottomWidth: 0.5,
-    borderBottomColor: "#e6e6e6",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 5,
   },
   tabRow: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "space-around",
+    paddingHorizontal: 8,
   },
   tabButton: {
     paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    marginHorizontal: 4,
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    transform: [{ scale: 1 }],
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    borderWidth: 1,
   },
-  tabButtonActive: {
-    transform: [{ scale: 1.02 }],
-  },
-  tabLabel: {
-    fontSize: 14,
-    color: "#475569",
-    fontWeight: "600",
-  },
-  tabLabelActive: {
-    color: "#0ea5a0",
-  },
+  tabLabel: { fontSize: 15, fontWeight: "600" },
   indicator: {
     position: "absolute",
-    height: 3,
     bottom: 0,
-    backgroundColor: "#10b981",
+    height: 3,
     borderRadius: 2,
-  },
-  contentWrap: {
-    flex: 1,
   },
 });

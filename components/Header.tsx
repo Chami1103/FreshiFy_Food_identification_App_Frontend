@@ -1,15 +1,19 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  Easing,
   StatusBar,
+  Platform,
+  Image,
+  Easing,
 } from "react-native";
-import { useRouter, usePathname } from "expo-router";
+import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
+import { useTheme } from "../contexts/ThemeContext";
 import ThemeToggle from "./ThemeToggle";
 import { getNotifications } from "../services/apiService";
 import { NOTIFICATION_TYPES } from "../utils/constants";
@@ -28,34 +32,20 @@ interface Notification {
 }
 
 const Header: React.FC<HeaderProps> = ({ isHeaderVisible }) => {
+  const { theme } = useTheme();
   const router = useRouter();
-  const pathname = usePathname();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const translateY = useRef(new Animated.Value(0)).current;
 
-  const title = pathname.includes("recipes")
-    ? "Recipes"
-    : pathname.includes("shelf")
-    ? "Shelf"
-    : pathname.includes("storage")
-    ? "Storage"
-    : pathname.includes("analytics")
-    ? "Analytics"
-    : pathname.includes("detection")
-    ? "Detection"
-    : "Dashboard";
-
-  // 🔔 Fetch notifications every 10 seconds
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
         const data = await getNotifications();
         setNotifications(data);
-        const unread = data.filter((n) => !n.read).length;
-        setUnreadCount(unread);
+        setUnreadCount(data.filter((n) => !n.read).length);
       } catch (err) {
         console.warn("Header Notification Error:", err);
       }
@@ -65,19 +55,18 @@ const Header: React.FC<HeaderProps> = ({ isHeaderVisible }) => {
     return () => clearInterval(interval);
   }, []);
 
-  // 🎞️ Animate header visibility
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: isHeaderVisible ? 1 : 0,
-        duration: 300,
-        easing: Easing.inOut(Easing.ease),
+        duration: 250,
+        easing: Easing.out(Easing.quad),
         useNativeDriver: true,
       }),
       Animated.timing(translateY, {
         toValue: isHeaderVisible ? 0 : -80,
-        duration: 300,
-        easing: Easing.inOut(Easing.ease),
+        duration: 250,
+        easing: Easing.out(Easing.quad),
         useNativeDriver: true,
       }),
     ]).start();
@@ -100,71 +89,87 @@ const Header: React.FC<HeaderProps> = ({ isHeaderVisible }) => {
 
   return (
     <>
-      <StatusBar hidden translucent backgroundColor="transparent" />
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle={theme === "light" ? "dark-content" : "light-content"}
+      />
 
       <Animated.View
         style={[
-          styles.header,
+          styles.headerWrapper,
           { opacity: fadeAnim, transform: [{ translateY }] },
         ]}
       >
-        {/* 🍃 Logo & Title */}
-        <TouchableOpacity
-          onPress={() => router.push("/")}
-          activeOpacity={0.7}
-          style={styles.logoContainer}
+        <BlurView
+          intensity={90}
+          tint={theme === "light" ? "light" : "dark"}
+          style={styles.blurContainer}
         >
-          <Text style={styles.logoEmoji}>🍃</Text>
-          <Text style={styles.logoText}>FreshiFy</Text>
-          <Text style={styles.pageTitle}> / {title}</Text>
-        </TouchableOpacity>
-
-        {/* Right Icons */}
-        <View style={styles.rightContainer}>
-          <ThemeToggle />
-
+          {/* Left: Logo */}
           <TouchableOpacity
-            onPress={() => router.push("/blog")}
-            style={styles.iconButton}
-            activeOpacity={0.7}
+            style={styles.left}
+            onPress={() => router.push("/profile")}
+            activeOpacity={0.8}
           >
-            <Ionicons name="newspaper-outline" size={24} color="#2563eb" />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => router.push("/notifications")}
-            style={[styles.iconButton, { position: "relative" }]}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name="notifications-outline"
-              size={24}
-              color={unreadCount > 0 ? "#facc15" : "#64748b"}
+            <Image
+              source={require("../assets/images/profile-avatar.png")}
+              style={styles.avatar}
             />
-            {unreadCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unreadCount}</Text>
-              </View>
-            )}
           </TouchableOpacity>
-        </View>
+
+          {/* Center: Brand */}
+          <View style={styles.center}>
+            <Text
+              style={[
+                styles.brand,
+                { color: theme === "light" ? "#0f172a" : "#f8fafc" },
+              ]}
+            >
+              FreshiFy
+            </Text>
+          </View>
+
+          {/* Right: Toggle + Notification */}
+          <View style={styles.right}>
+            <ThemeToggle />
+            <TouchableOpacity
+              onPress={() => router.push("/notifications")}
+              style={styles.iconButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="notifications-outline"
+                size={23}
+                color={unreadCount > 0 ? "#facc15" : theme === "light" ? "#1e293b" : "#f8fafc"}
+              />
+              {unreadCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{unreadCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+        </BlurView>
       </Animated.View>
 
-      {/* Inline Alert for Latest Notification */}
       {latest && (
         <View
           style={[
             styles.alertBar,
-            latest.type === NOTIFICATION_TYPES.HIGH_GAS
-              ? { backgroundColor: "#fee2e2" }
-              : latest.type === NOTIFICATION_TYPES.SPOILED_ALERT
-              ? { backgroundColor: "#fef3c7" }
-              : latest.type === NOTIFICATION_TYPES.COST_UPDATE
-              ? { backgroundColor: "#d1fae5" }
-              : { backgroundColor: "#e0f2fe" },
+            theme === "light"
+              ? { backgroundColor: "#e0f2fe" }
+              : { backgroundColor: "#334155" },
           ]}
         >
-          <Text style={styles.alertText}>{latestText}</Text>
+          <Text
+            style={[
+              styles.alertText,
+              { color: theme === "light" ? "#111827" : "#f8fafc" },
+            ]}
+          >
+            {latestText}
+          </Text>
         </View>
       )}
     </>
@@ -174,49 +179,40 @@ const Header: React.FC<HeaderProps> = ({ isHeaderVisible }) => {
 export default Header;
 
 const styles = StyleSheet.create({
-  header: {
+  headerWrapper: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
+    zIndex: 50,
+    elevation: 6,
+  },
+  blurContainer: {
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight ?? 20 : 48,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "rgba(255,255,255,0.9)",
-    borderBottomColor: "rgba(229,231,235,0.6)",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 4,
-    zIndex: 50,
   },
-  logoContainer: { flexDirection: "row", alignItems: "center" },
-  logoEmoji: { fontSize: 26, marginRight: 6 },
-  logoText: { fontSize: 20, fontWeight: "700", color: "#0f172a" },
-  pageTitle: { fontSize: 16, fontWeight: "600", color: "#2563eb", marginLeft: 4 },
-  rightContainer: { flexDirection: "row", alignItems: "center" },
-  iconButton: { marginLeft: 16 },
+  left: { flex: 0.2, alignItems: "flex-start" },
+  center: { flex: 0.6, alignItems: "center" },
+  right: { flex: 0.2, flexDirection: "row", justifyContent: "flex-end" },
+  avatar: { width: 34, height: 34, borderRadius: 17 },
+  brand: { fontSize: 18, fontWeight: "700", letterSpacing: 0.3 },
+  iconButton: { marginLeft: 14, position: "relative" },
   badge: {
     position: "absolute",
-    top: -2,
-    right: -2,
+    top: -4,
+    right: -6,
     backgroundColor: "#ef4444",
     borderRadius: 8,
     paddingHorizontal: 4,
-    minWidth: 16,
+    minWidth: 15,
     alignItems: "center",
     justifyContent: "center",
   },
   badgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
-  alertBar: {
-    marginTop: 62,
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  alertText: { color: "#111827", fontSize: 12, textAlign: "center" },
+  alertBar: { paddingVertical: 4, alignItems: "center" },
+  alertText: { fontSize: 12 },
 });

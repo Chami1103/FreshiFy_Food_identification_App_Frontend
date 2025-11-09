@@ -1,0 +1,28 @@
+name: Auto Merge dev → _current
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge dev into _current
+        run: |
+          git fetch origin _current
+          git checkout _current
+          git merge origin/dev --no-edit
+          git push origin _current
