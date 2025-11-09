@@ -40,10 +40,9 @@ const Header: React.FC<HeaderProps> = ({ isHeaderVisible }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // 🎞️ Animations
+  // 🎞️ Animations (no blurIntensity!)
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const translateY = useRef(new Animated.Value(0)).current;
-  const blurIntensity = useRef(new Animated.Value(40)).current;
   const parallaxShift = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -74,12 +73,6 @@ const Header: React.FC<HeaderProps> = ({ isHeaderVisible }) => {
         duration: 250,
         easing: Easing.out(Easing.quad),
         useNativeDriver: true,
-      }),
-      Animated.timing(blurIntensity, {
-        toValue: isHeaderVisible ? 80 : 30,
-        duration: 250,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: false,
       }),
       Animated.timing(parallaxShift, {
         toValue: isHeaderVisible ? 0 : -10,
@@ -125,7 +118,7 @@ const Header: React.FC<HeaderProps> = ({ isHeaderVisible }) => {
           }}
         >
           <BlurView
-            intensity={blurIntensity as any}
+            intensity={isHeaderVisible ? 80 : 30}
             tint={theme === "light" ? "light" : "dark"}
             style={styles.blurContainer}
           >
@@ -225,7 +218,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backdropFilter: "blur(12px)",
   },
   left: { flex: 0.2, alignItems: "flex-start" },
   center: { flex: 0.6, alignItems: "center" },

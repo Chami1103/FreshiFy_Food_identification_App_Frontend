@@ -7,44 +7,62 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   validate-and-merge:
     runs-on: ubuntu-latest
 
     steps:
-      # 🧩 Checkout using secure PAT
+      # 🧩 Checkout code securely
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.PERSONAL_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      # ⚙️ Install Node & Expo
-      - name: Set up Node
+      # ⚙️ Node.js + Expo setup
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      # 📦 Install dependencies
       - name: Install dependencies
         run: npm ci
 
-      - name: TypeScript build check
+      # 🧠 TypeScript build validation
+      - name: TypeScript Build Check
         run: npm run tsc --noEmit
 
-      - name: Expo prebuild validation
+      # 🧩 Expo prebuild check
+      - name: Validate Expo Prebuild
         run: npx expo prebuild --non-interactive
 
-      # 🧠 Configure Git
+      # 🧠 Configure Git identity for bot commits
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      # ✅ Merge dev → _current only if all above succeed
+      # ✅ Merge dev → _current only if validation passes
       - name: Merge dev into _current
         run: |
           git fetch origin _current
           git checkout _current
           git merge origin/dev --no-edit
           git push origin _current
+
+      # 📣 Report success
+      - name: Post success comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: success()
+        with:
+          message: "✅ **CI Passed:** dev branch successfully merged into _current 🚀"
+
+      # 🚨 Report failure
+      - name: Post failure comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: failure()
+        with:
+          message: "❌ **CI Failed:** dev → _current merge aborted. Check logs for details."

@@ -7,40 +7,61 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   promote:
     runs-on: ubuntu-latest
 
     steps:
+      # 🧩 Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.PERSONAL_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Set up Node
+      # ⚙️ Node setup
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      # 📦 Install dependencies
       - name: Install dependencies
         run: npm ci
 
-      - name: TypeScript build check
+      # 🧠 TypeScript build validation
+      - name: TypeScript Build Check
         run: npm run tsc --noEmit
 
-      - name: Expo prebuild validation
+      # 🧩 Expo prebuild validation
+      - name: Validate Expo Prebuild
         run: npx expo prebuild --non-interactive
 
+      # ⚙️ Git bot config
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      # ✅ Merge _current → main if all above succeed
       - name: Merge _current into main
         run: |
           git fetch origin main
           git checkout main
           git merge origin/_current --no-edit
           git push origin main
+
+      # 📣 Post merge status
+      - name: Post success comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: success()
+        with:
+          message: "✅ **CI Passed:** _current successfully merged into main 🎉"
+
+      - name: Post failure comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: failure()
+        with:
+          message: "❌ **CI Failed:** _current → main merge aborted. See workflow logs."
