@@ -169,7 +169,7 @@ export default DetectionScreen;
 const styles = StyleSheet.create({
   container: { flex: 1 },
   subHeader: {
-    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight ?? 40) + 10 : 60,
+    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight ?? 40) + 60 : 60,
     paddingBottom: 8,
     borderBottomWidth: 0.5,
     shadowColor: "#000",

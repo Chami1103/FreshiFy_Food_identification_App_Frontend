@@ -1,3 +1,4 @@
+//E:\FreshiFy_Mobile_App_Frontend\components\Header.tsx
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -142,7 +143,7 @@ const Header: React.FC<HeaderProps> = ({ isHeaderVisible }) => {
                   { color: theme === "light" ? "#0f172a" : "#f8fafc" },
                 ]}
               >
-                FreshiFy
+                FreshiFy 🍃
               </Text>
             </View>
 
